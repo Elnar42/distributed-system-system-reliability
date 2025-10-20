@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Reliability Testing Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --warning-color: #f39c12;
+            --bg-light: #ecf0f1;
+            --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px 0;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .header-section h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header-section p {
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .chart-wrapper {
+            max-width: 500px;
+            max-height: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .logs-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .log-entry {
+            border-left: 4px solid;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .log-entry:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .log-entry.error {
+            border-left-color: var(--error-color);
+        }
+
+        .log-entry.success {
+            border-left-color: var(--success-color);
+        }
+
+        .log-time {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .log-message {
+            margin-top: 5px;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .spinner-border-custom {
+            width: 1rem;
+            height: 1rem;
+            border-width: 2px;
+        }
+
+        .badge-custom {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .tabs-container {
+            margin-bottom: 20px;
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .logs-scroll {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .logs-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .logs-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .logs-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .logs-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 0 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4>Processing Requests...</h4>
+        <p class="text-muted">Please wait while we send requests to the server</p>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="header-section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="fas fa-chart-line me-2"></i>Banking Reliability Dashboard</h1>
+                <p>Monitor and test your banking application's reliability in real-time</p>
+            </div>
+            <div>
+                    <span class="badge bg-success badge-custom">
+                        <i class="fas fa-circle me-2" style="font-size: 0.6rem;"></i>System Active
+                    </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <h4 class="mb-4"><i class="fas fa-sliders-h me-2"></i>Request Control Panel</h4>
+        <div class="row align-items-end">
+            <div class="col-md-8">
+                <label for="requestCount" class="form-label fw-bold">Number of Requests</label>
+                <input type="number" class="form-control form-control-lg" id="requestCount"
+                       placeholder="Enter number of requests" value="100" min="1" max="10000">
+                <small class="text-muted">Send between 1 and 10,000 test requests</small>
+            </div>
+            <div class="col-md-4 mt-3 mt-md-0">
+                <button class="btn btn-primary-custom btn-lg w-100" onclick="sendRequests()">
+                    <i class="fas fa-paper-plane me-2"></i>Send Requests
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row" id="statsCards">
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card text-center">
+                <div class="stat-icon text-primary">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-value text-success" id="successCount">0</div>
+                <div class="stat-label">Successful Requests</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card text-center">
+                <div class="stat-icon text-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="stat-value text-danger" id="errorCount">0</div>
+                <div class="stat-label">Error Requests</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card text-center">
+                <div class="stat-icon text-info">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="stat-value text-info" id="totalCount">0</div>
+                <div class="stat-label">Total Logs</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card text-center">
+                <div class="stat-icon text-warning">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-value text-warning" id="errorRate">0%</div>
+                <div class="stat-label">Error Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Distribution Chart -->
+    <div class="chart-container">
+        <h4 class="mb-4"><i class="fas fa-chart-pie me-2"></i>Error Distribution Analysis</h4>
+        <div class="chart-wrapper">
+            <canvas id="errorDistributionChart"></canvas>
+        </div>
+        <div id="chartEmptyState" class="empty-state">
+            <i class="fas fa-chart-pie"></i>
+            <h5>No Error Data Available</h5>
+            <p>Send some requests to see the error distribution</p>
+        </div>
+    </div>
+
+    <!-- Logs Section -->
+    <div class="logs-container">
+        <div class="tabs-container">
+            <ul class="nav nav-pills mb-3" id="logTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tab" data-bs-toggle="pill"
+                            data-bs-target="#all" type="button" onclick="showAllLogs()">
+                        <i class="fas fa-list me-2"></i>All Logs
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="success-tab" data-bs-toggle="pill"
+                            data-bs-target="#success" type="button" onclick="loadSuccessLogs()">
+                        <i class="fas fa-check me-2"></i>Success Logs
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="error-tab" data-bs-toggle="pill"
+                            data-bs-target="#error" type="button" onclick="loadErrorLogs()">
+                        <i class="fas fa-times me-2"></i>Error Logs
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-content" id="logTabContent">
+            <div class="tab-pane fade show active" id="all">
+                <div class="logs-scroll" id="allLogsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h5>No Logs Available</h5>
+                        <p>Start by sending requests to generate logs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="success">
+                <div class="logs-scroll" id="successLogsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h5>No Success Logs Available</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="error">
+                <div class="logs-scroll" id="errorLogsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h5>No Error Logs Available</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let errorDistributionChart = null;
+    let allLogs = [];
+
+    async function sendRequests() {
+        const count = document.getElementById('requestCount').value;
+
+        if (!count || count < 1) {
+            alert('Please enter a valid number of requests');
+            return;
+        }
+
+        document.getElementById('loadingOverlay').classList.add('active');
+
+        try {
+            const response = await fetch(`/logs/sendRequestsAndSave?count=${count}`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                await loadAllData();
+                showNotification('Success!', `Successfully sent ${count} requests`, 'success');
+            } else {
+                showNotification('Error', 'Failed to send requests', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Error', 'Network error occurred', 'error');
+        } finally {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+    }
+
+    async function loadAllData() {
+        await Promise.all([
+            loadSuccessLogs(),
+            loadErrorLogs(),
+            loadErrorDistribution()
+        ]);
+
+        // Merge all logs for the "All" tab
+        const successLogs = await fetchLogs('/logs/success');
+        const errorLogs = await fetchLogs('/logs/error');
+        allLogs = [...successLogs, ...errorLogs].sort((a, b) =>
+            new Date(b.dateTime) - new Date(a.dateTime)
+        );
+
+        displayLogs(allLogs, 'allLogsContainer');
+        updateStats();
+    }
+
+    async function fetchLogs(endpoint) {
+        try {
+            const response = await fetch(endpoint);
+            if (response.ok) {
+                return await response.json();
+            }
+        } catch (error) {
+            console.error('Error fetching logs:', error);
+        }
+        return [];
+    }
+
+    async function loadSuccessLogs() {
+        const logs = await fetchLogs('/logs/success');
+        displayLogs(logs, 'successLogsContainer');
+    }
+
+    async function loadErrorLogs() {
+        const logs = await fetchLogs('/logs/error');
+        displayLogs(logs, 'errorLogsContainer');
+    }
+
+    function showAllLogs() {
+        displayLogs(allLogs, 'allLogsContainer');
+    }
+
+    function displayLogs(logs, containerId) {
+        const container = document.getElementById(containerId);
+
+        if (!logs || logs.length === 0) {
+            container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h5>No Logs Available</h5>
+                        <p>No logs found for this category</p>
+                    </div>
+                `;
+            return;
+        }
+
+        container.innerHTML = logs.map(log => `
+                <div class="log-entry ${log.error ? 'error' : 'success'}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="log-time">
+                                <i class="far fa-clock me-1"></i>
+                                ${formatDateTime(log.dateTime)}
+                            </div>
+                            <div class="log-message">${escapeHtml(log.logMessage)}</div>
+                        </div>
+                        <span class="badge ${log.error ? 'bg-danger' : 'bg-success'}">
+                            ${log.error ? 'ERROR' : 'SUCCESS'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+    }
+
+    async function loadErrorDistribution() {
+        try {
+            const response = await fetch('/logs/error-distribution');
+            if (response.ok) {
+                const data = await response.json();
+                displayErrorDistribution(data);
+            }
+        } catch (error) {
+            console.error('Error loading distribution:', error);
+        }
+    }
+
+    function displayErrorDistribution(data) {
+        const canvas = document.getElementById('errorDistributionChart');
+        const emptyState = document.getElementById('chartEmptyState');
+
+        if (!data || Object.keys(data).length === 0) {
+            canvas.style.display = 'none';
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        canvas.style.display = 'block';
+        emptyState.style.display = 'none';
+
+        const labels = [];
+        const values = [];
+        const colors = [
+            '#e74c3c', '#3498db', '#f39c12', '#27ae60', '#9b59b6',
+            '#1abc9c', '#e67e22', '#34495e', '#16a085', '#c0392b'
+        ];
+
+        Object.entries(data).forEach(([category, info]) => {
+            labels.push(category);
+            values.push(info.percentage);
+        });
+
+        if (errorDistributionChart) {
+            errorDistributionChart.destroy();
+        }
+
+        const ctx = canvas.getContext('2d');
+        errorDistributionChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed.toFixed(2) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function updateStats() {
+        const successLogs = await fetchLogs('/logs/success');
+        const errorLogs = await fetchLogs('/logs/error');
+
+        const successCount = successLogs.length;
+        const errorCount = errorLogs.length;
+        const totalCount = successCount + errorCount;
+        const errorRate = totalCount > 0 ? ((errorCount / totalCount) * 100).toFixed(2) : 0;
+
+        document.getElementById('successCount').textContent = successCount;
+        document.getElementById('errorCount').textContent = errorCount;
+        document.getElementById('totalCount').textContent = totalCount;
+        document.getElementById('errorRate').textContent = errorRate + '%';
+    }
+
+    function formatDateTime(dateTime) {
+        const date = new Date(dateTime);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showNotification(title, message, type) {
+        // Simple alert for now - could be replaced with a toast library
+        alert(`${title}: ${message}`);
+    }
+
+    // Load initial data on page load
+    window.addEventListener('load', () => {
+        loadAllData();
+    });
+</script>
+</body>
+</html>
